@@ -1,5 +1,4 @@
 import newResource from './Resource'
-import { Ref } from 'vue'
 import Identifiable, { ID } from './objects/id'
 import Tickable from './objects/Tickable'
 import Vector2D from './Vector2D'
@@ -42,17 +41,17 @@ export function isColliding(entity1: Entity, entity2: Entity) {
 }
 
 export class Engine2D {
-  protected canvas: Ref<HTMLCanvasElement>
+  protected canvas: HTMLCanvasElement
   protected context: CanvasRenderingContext2D
   public get canvasWidth() {
-    return this.canvas.value.width
+    return this.canvas.width
   }
   public get canvasHeight() {
-    return this.canvas.value.height
+    return this.canvas.height
   }
-  constructor(canvas: Ref<HTMLCanvasElement>) {
+  constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
-    this.context = canvas.value.getContext('2d')!!
+    this.context = canvas.getContext('2d')!!
   }
 
   static newResource = newResource
@@ -129,7 +128,7 @@ export class Engine2D {
     }
     for (const [ entity, victims ] of collision) {
       try {
-        entity.onCollideInto?.(victims)
+        entity.onCollideInto?.(this, victims)
         // this.notify('collision', { entity, victims })
       } catch (err) {
         console.warn('Error calling "onCollideInto" for object', entity, err)

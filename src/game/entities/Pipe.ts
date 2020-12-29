@@ -4,7 +4,6 @@ import pipeNorthURL from '../../assets/images/pipeNorth.png'
 import pipeSouthURL from '../../assets/images/pipeSouth.png'
 import Vector2D from '../../engine/Vector2D'
 import Engine2D from '../../engine'
-import { Ref } from 'vue'
 
 
 export class Pipe extends Entity implements MovingEntity {
@@ -42,16 +41,16 @@ export class Pipe extends Entity implements MovingEntity {
 export default Pipe
 
 export class PipeManager {
-  protected canvas: Ref<HTMLCanvasElement>
+  protected canvas: HTMLCanvasElement
   protected engine: Engine2D
   public pipes: Pipe[] = []
   public get maxPipePoolSize() {
-    return Math.ceil(this.canvas.value.width / Pipe.width) * 2
+    return Math.ceil(this.canvas.width / Pipe.width) * 2
   }
   public gap: number
   public interval: number
   protected MPipe: typeof Pipe
-  constructor(canvas: Ref<HTMLCanvasElement>, engine: Engine2D, gap: number, interval: number) {
+  constructor(canvas: HTMLCanvasElement, engine: Engine2D, gap: number, interval: number) {
     this.canvas = canvas
     this.engine = engine
     this.gap = gap
@@ -87,7 +86,7 @@ export class PipeManager {
       )
     } else {
       pipe = new MPipe(
-        this.canvas.value.width,
+        this.canvas.width,
         nextY,
         gap
       )

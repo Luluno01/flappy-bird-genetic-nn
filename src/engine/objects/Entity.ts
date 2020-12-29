@@ -1,3 +1,4 @@
+import Engine2D from '..'
 import Vector2D from '../Vector2D'
 import Tickable from './Tickable'
 
@@ -7,7 +8,7 @@ export abstract class Entity extends Tickable {
   public fragments: [ Vector2D, HTMLImageElement ][] = []
   public collisionZIndex: number = 0
   public drawZIndex: number = 0
-  public onCollideInto?(entities: Entity[]): void
+  public onCollideInto?(engine: Engine2D, entities: Entity[]): void
 
   public static isEntity(obj: any): obj is Entity {
     return obj instanceof Entity
