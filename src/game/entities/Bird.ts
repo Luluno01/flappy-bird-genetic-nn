@@ -7,6 +7,7 @@ import Vector2D from '../../engine/Vector2D'
 import Pipe, { PipeManager } from './Pipe'
 import Engine2D from '../../engine'
 import Ground from './Ground'
+import Game from '../Game'
 
 
 export interface EnvInfo {
@@ -31,25 +32,24 @@ export class Bird extends Entity implements MovingEntity {
 
   public velocity = new Vector2D(0, 0)
   public acceleration = new Vector2D(0, 0)
-  protected pipeMgr: PipeManager
-  protected ground: Ground
-  protected control: Control
+  protected game: Game
+  public control: Control
   public dead = false
   public score = 0
+  public aliveTicks = 0
 
-  constructor(x: number, y: number, gravity: number, pipeMgr: PipeManager, ground: Ground, control: Control) {
+  constructor(x: number, y: number, gravity: number, game: Game, control: Control) {
     super()
     this.fragments.push([ new Vector2D(x, y), Bird.birdImg ])
     this.gravity = gravity
-    this.pipeMgr = pipeMgr
-    this.ground = ground
+    this.game = game
     this.control = control
   }
 
   public flap() {
     this.velocity = new Vector2D(0, -3.5)
     Bird.flySnd.play()
-    console.log('[game.entities.Bird.Bird] Bird', this.id, 'flaps')
+    // console.log('[game.entities.Bird.Bird] Bird', this.id, 'flaps')
   }
 
   protected nextPipe?: Pipe
@@ -59,17 +59,21 @@ export class Bird extends Entity implements MovingEntity {
       if (x + width < 0) {
         engine.removeTickable(this)
       }
+      this.nextPipe = undefined
     } else {
+      this.aliveTicks++
       const pos = this.fragments[0][0]
       if (pos.y < 0) pos.y = 0
       const { x, y } = pos
-      const { ground } = this
+      const { game } = this
+      const { pipeMgr } = game
+      const ground = this.game.getGround()
       const envInfo: EnvInfo = {
         toGround: ground.fragments[0][0].y - y
       }
       const { nextPipe, control } = this
       let noNextPipe = true
-      for (const pipe of this.pipeMgr.pipes) {
+      for (const pipe of pipeMgr.pipes) {
         const [ southPipePos, ] = pipe.fragments[1]
         const xFar = southPipePos.x + Pipe.width
         if (xFar > x) {
@@ -112,11 +116,16 @@ export class Bird extends Entity implements MovingEntity {
     this.velocity = new Vector2D(-1, 0)
     this.acceleration = new Vector2D(0, 0)
     this.dead = true
-    this.control.onDeath(this)
+    try {
+      this.control.onDeath(this)
+    } catch (err) {
+      console.warn('Error calling "onDeath" for control', this.control, err)
+    }
+    this.game._onBirdDeath(this)
   }
 
   public onRemove() {
-    console.log('[game.entities.Bird.Bird] Bird', this.id, 'removed from engine')
+    // console.log('[game.entities.Bird.Bird] Bird', this.id, 'removed by engine')
   }
 }
 

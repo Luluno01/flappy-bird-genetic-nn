@@ -1,3 +1,4 @@
+import range from '../helpers/range'
 import Layer from './Layer'
 
 
@@ -22,18 +23,36 @@ export class Neuron {
    * @param weightInit initializer of weights
    * @param biasInit initializer of biases
    */
-  constructor(index: number, input: Layer | null, activator: Activator, weightInit: (i: number, j: number) => number = () => 0, biasInit: (i: number, j: number) => number = () => 0) {
-    this.index = index
-    this.activator = activator
-    if (input) {
-      const inputSize = input.size
-      const ws = this.weights = new Array(inputSize)
-      const bs = this.biases = new Array(inputSize)
-      for (let j = 0; j < inputSize; j++) {
-        ws[j] = weightInit(index, j)
-        bs[j] = biasInit(index, j)
+  constructor(index: number, input: Layer | null, activator: Activator, weightInit?: (i: number, j: number) => number, biasInit?: (i: number, j: number) => number)
+  /**
+   * 
+   * @param neuron another neuron to copy from
+   */
+  constructor(neuron: Neuron)
+  constructor(indexOrNeuron: number | Neuron, input?: Layer | null, activator?: Activator, weightInit: (i: number, j: number) => number = () => 0, biasInit: (i: number, j: number) => number = () => 0) {
+    if (typeof indexOrNeuron == 'number') {
+      this.index = indexOrNeuron
+      this.activator = activator!!
+      if (input) {
+        const inputSize = input.size
+        const ws = this.weights = new Array(inputSize)
+        const bs = this.biases = new Array(inputSize)
+        for (const j of range(inputSize)) {
+          ws[j] = weightInit(indexOrNeuron, j)
+          bs[j] = biasInit(indexOrNeuron, j)
+        }
       }
+    } else {
+      const { index, weights, biases, activator: act } = indexOrNeuron
+      this.index = index
+      if (weights) this.weights = Array.from(weights)
+      if (biases) this.biases = Array.from(biases)
+      this.activator = act
     }
+  }
+
+  public clone() {
+    return new Neuron(this)
   }
 
   /**

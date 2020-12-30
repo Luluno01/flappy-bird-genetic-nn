@@ -3,7 +3,7 @@ import { Activator } from './Neuron'
 
 
 export class Network {
-  protected layers: Layer[] = []
+  public layers: Layer[] = []
 
   public newLayer(neurons: number, activator: Activator, weightInit: (i: number, j: number) => number = () => 0, biasInit: (i: number, j: number) => number = () => 0) {
     const { layers } = this
@@ -20,6 +20,16 @@ export class Network {
       activations = layer.activate(activations)
     }
     return activations
+  }
+
+  public clone() {
+    const network = new Network
+    let lastLayer: Layer | null = null
+    for (const layer of this.layers) {
+      network.layers.push(layer.clone(lastLayer))
+      if (!lastLayer) lastLayer = layer
+    }
+    return network
   }
 }
 

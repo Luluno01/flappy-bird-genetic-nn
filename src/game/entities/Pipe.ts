@@ -31,7 +31,7 @@ export class Pipe extends Entity implements MovingEntity {
   }
 
   public tick(engine: Engine2D) {
-    if (this.fragments.every(([ pos, img ]) => pos.x < -img.width)) {
+    if (this.fragments.every(([ pos, img ]) => pos.x < -img.width) && !this._removed) {
       engine.removeTickable(this)
       this._removed = true
     }
@@ -58,12 +58,26 @@ export class PipeManager {
     const pipeMgr = this
     this.MPipe = class MPipe extends Pipe {
       onRemove() {
-        console.log('[game.entities.Pipe.Pipe] Pipe removed by engine')
+        // console.log('[game.entities.Pipe.Pipe] Pipe removed by engine')
         pipeMgr.nextPipe()
       }
     }
+    this.start()
+  }
+
+  protected start() {
     const { pipes, maxPipePoolSize } = this
     while (pipes.length < maxPipePoolSize) this.nextPipe()
+  }
+
+  public reset() {
+    for (const pipe of this.pipes) {
+      if (!pipe._removed) {
+        pipe._removed = true  // Mark for removed
+        this.engine.removeTickable(pipe)
+      }
+    }
+    this.start()
   }
 
   public nextPipe() {
@@ -77,10 +91,10 @@ export class PipeManager {
     if (pipes.length >= maxPipePoolSize) return  // No need
     const nextY = Math.floor(Math.random() * Pipe.pipeNorthImg.height) - Pipe.pipeNorthImg.height
     let pipe: Pipe
-    const currentPipes = pipes.length
-    if (currentPipes) {
+    const lastPipe: Pipe | undefined = pipes[pipes.length - 1]
+    if (lastPipe && !lastPipe._removed) {
       pipe = new MPipe(
-        pipes[currentPipes - 1].fragments[0][0].x + interval,
+        lastPipe.fragments[0][0].x + interval,
         nextY,
         gap
       )
@@ -91,7 +105,7 @@ export class PipeManager {
         gap
       )
     }
-    console.log('[game.entities.Pipe.PipeManager] Creating next pipe')
+    // console.log('[game.entities.Pipe.PipeManager] Creating next pipe')
     pipes.push(pipe)
     engine.addTickable(pipe)
   }

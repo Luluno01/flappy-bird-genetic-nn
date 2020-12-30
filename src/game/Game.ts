@@ -26,10 +26,27 @@ export class Game {
   }
 
   public addBird(control: Control) {
-    const bird = new Bird(10, 150 + Math.random() * 200 - 100, this.gravity, this.pipeMgr, this.ground, control)
+    const bird = new Bird(10, 150 + Math.random() * 200 - 100, this.gravity, this, control)
     this.birds.push(bird)
     this.engine.addTickable(bird)
     return bird
+  }
+
+  public _onBirdDeath(_: Bird) {
+    if (this.birds.every(bird => bird.dead)) {
+      this.pause()
+      console.log('[game.Game.Game] All birds died')
+      this.onGameOver()
+      // this.reset()
+      // this.unpause()
+      // setTimeout(() => this.unpause(), 2000)
+    }
+  }
+
+  public onGameOver() {}
+
+  public getGround() {
+    return this.ground
   }
 
   public getBirds() {
@@ -49,6 +66,11 @@ export class Game {
   public unpause() {
     this.engine.unpause()
     return this
+  }
+
+  public reset() {
+    this.birds = []
+    this.pipeMgr.reset()
   }
 }
 

@@ -1,44 +1,9 @@
 import newResource from './Resource'
 import Identifiable, { ID } from './objects/id'
 import Tickable from './objects/Tickable'
-import Vector2D from './Vector2D'
 import Entity from './objects/Entity'
+import { isColliding } from '../helpers/collision'
 
-
-export function isInside({ x: px, y: py }: Pick<Vector2D, 'x' | 'y'>, { x: xl, y: yl }: Pick<Vector2D, 'x' | 'y'>, { width, height }: Pick<HTMLImageElement, 'width' | 'height'>) {
-  const xu = xl + width
-  const yu = yl + height
-  return xl <= px && px <= xu && yl <= py && py <= yu
-}
-
-export function isColliding(entity1: Entity, entity2: Entity) {
-  if (entity1.collisionZIndex != entity2.collisionZIndex) return false
-  for (const [ pos1, img1 ] of entity1.fragments) {
-    for (const [ pos2, img2 ] of entity2.fragments) {
-      const { x: x1, y: y1 } = pos1
-      const { x: x2, y: y2 } = pos2
-      const { width: w1, height: h1 } = img1
-      const { width: w2, height: h2 } = img2
-      // [x1, x1 + w1], [y1, y1 + h1]
-      // [x2, x2 + w2], [y2, y2 + h2]
-      const x1u = x1 + w1  // x1 upper bound
-      const y1u = y1 + h1  // y1 upper bound
-      const x2u = x2 + w2  // x2 upper bound
-      const y2u = y2 + h2  // y2 upper bound
-      if (isInside({ x: x1, y: y1 }, pos2, img2) ||
-        isInside({ x: x1, y: y1u }, pos2, img2) ||
-        isInside({ x: x1u, y: y1 }, pos2, img2) ||
-        isInside({ x: x1u, y: y1u }, pos2, img2) ||
-        isInside({ x: x2, y: y2 }, pos1, img1) ||
-        isInside({ x: x2, y: y2u }, pos1, img1) ||
-        isInside({ x: x2u, y: y2 }, pos1, img1) ||
-        isInside({ x: x2u, y: y2u }, pos1, img1)) {
-        return true
-      }
-    }
-  }
-  return false
-}
 
 export class Engine2D {
   protected canvas: HTMLCanvasElement
@@ -49,6 +14,9 @@ export class Engine2D {
   public get canvasHeight() {
     return this.canvas.height
   }
+  protected _tps = 0
+  public tps = 0
+  protected requestId?: number
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
     this.context = canvas.getContext('2d')!!
@@ -83,6 +51,7 @@ export class Engine2D {
    */
   protected tick() {
     // this.notify('before-tick')
+    this._tps++
     const { removalQueue, tickables } = this
     for (const id of removalQueue) {
       const tickable = tickables.get(id)
@@ -163,24 +132,51 @@ export class Engine2D {
     }
   }
 
-  protected paused = false
+  protected _paused = false
+  public get paused() {
+    return this._paused
+  }
+  protected tpsInt?: ReturnType<typeof setInterval>
+
+  protected starts = 0
+  protected nextStart() {
+    this.starts = (this.starts + 1) % 0xffffffff
+  }
 
   public pause() {
-    this.paused = true
+    this._paused = true
+    if (this.tpsInt !== undefined) {
+      clearInterval(this.tpsInt)
+      this.tpsInt = undefined
+    }
+    if (this.requestId !== undefined) {
+      cancelAnimationFrame(this.requestId)  // This is not working
+      this.requestId = undefined
+    }
+    this.nextStart()
     return this
   }
 
   public unpause() {
-    this.paused = false
+    this._paused = false
     return this.run()
   }
 
   public run() {
-    if (this.paused) return this
-    requestAnimationFrame(() => {
+    this.tpsInt = setInterval(() => {
+      this.tps = this._tps
+      this._tps = 0
+    }, 1000)
+    this._run(this.starts)
+  }
+
+  protected _run(starts: number) {
+    if (this._paused) return this
+    this.requestId = requestAnimationFrame(() => {
+      if (starts != this.starts) return  // This frame should be canceled
       this.tick()
       this.draw()
-      this.run()  // Loop
+      this._run(starts)  // Loop
     })
     return this
   }
