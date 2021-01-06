@@ -3,7 +3,7 @@ import Network from './Network'
 import Buffer from '../helpers/Buffer'
 
 
-export class NetworkGeneAdapter extends GeneAdapter<Network> {
+export class NetworkBinaryGeneAdapter extends GeneAdapter<Network> {
   public get(individual: Network): Buffer {
     let bytes = 0
     for (const layer of individual.layers) {
@@ -54,4 +54,4 @@ export class NetworkGeneAdapter extends GeneAdapter<Network> {
   }
 }
 
-export default NetworkGeneAdapter
+export default NetworkBinaryGeneAdapter

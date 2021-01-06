@@ -3,6 +3,7 @@
   <div>TPS: {{ tps }}</div>
   <div>Gen: {{ generations }}</div>
   <div>Max Score: {{ maxScore }}</div>
+  <button @click="toggleSpeed">Toggle Speed</button>
 </template>
 
 <script lang="ts">
@@ -14,13 +15,15 @@ import Game from './game/Game'
 import Pipe from './game/entities/Pipe'
 import Background from './game/entities/Background'
 import Ground from './game/entities/Ground'
-import CheatingControl from './controls/CheatingControl'
 import RandomControl from './controls/RandomControl'
 import NNControl from './controls/NNControl'
-import Genetic from './genetic'
+import { BinaryGenetic } from './genetic'
+// import { AtomGenetic } from './genetic'
 import Network from './nn/Network'
-import NetworkGeneAdapter from './nn/NetworkGeneAdapter'
+import NetworkBinaryGeneAdapter from './nn/NetworkBinaryGeneAdapter'
+// import NetworkAtomGeneAdapter, { NetworkGeneAtom } from './nn/NetworkAtomGeneAdapter'
 import range from './helpers/range'
+import { rand } from './helpers/random'
 
 
 export default defineComponent({
@@ -30,10 +33,15 @@ export default defineComponent({
     const maxScore = ref(0)
     class GeneticGame extends Game {
       public maxBirds = 16
-      public parents = 8
-      public mutationRate = 0.2
-      protected genetic = new Genetic<Network>(new NetworkGeneAdapter)
+      public parents = 4
+      public children = 8
+      public divisions = 0
+      public mutationRate = 0.4
+      // public doubleMutationAfterGen = 20
+      // protected genetic = new AtomGenetic<Network, NetworkGeneAtom>(new NetworkAtomGeneAdapter, () => ({ weight: rand(-0xffffffff, 0xffffffff), bias: rand(-0xffffffff, 0xffffffff) }))
+      protected genetic = new BinaryGenetic<Network>(new NetworkBinaryGeneAdapter)
       public onGameOver() {
+        // if (generations.value == this.doubleMutationAfterGen) this.mutationRate *= 2
         const { birds, genetic } = this
         const sortedBirds = birds.sort((a, b) => {
           if (b.score == a.score) return b.aliveTicks - a.aliveTicks
@@ -53,9 +61,19 @@ export default defineComponent({
           })
         }
 
-        for (const _ of range(this.maxBirds - this.parents)) {
+        const firstParent = parents[0]
+        for (const _ of range(this.divisions)) {
+          const child = genetic.mutate(firstParent, this.mutationRate)
+          nextGenInfo.push({ network: child, score: 0 })
+        }
+
+        for (const _ of range(this.children)) {
           const child = genetic.mutate(genetic.crossover(parents), this.mutationRate)
           nextGenInfo.push({ network: child, score: 0 })
+        }
+
+        for (const _ of range(this.maxBirds - this.parents - this.divisions - this.children)) {
+          nextGenInfo.push({ network: (new NNControl).network, score: 0 })
         }
 
         this.reset()
@@ -79,6 +97,14 @@ export default defineComponent({
     const game = reactive(new GeneticGame)
     const tps = computed(() => game.engine?.tps || 0)
 
+    let render = true
+    function toggleSpeed() {
+      render = !render
+      game.engine.setDraw(render)
+      if (render) game.engine.setMaxTps(75)
+      else game.engine.setMaxTps(200)
+    }
+
     onMounted(async () => {
       await Promise.all([
         waitImage(Pipe.pipeNorthImg),
@@ -87,21 +113,7 @@ export default defineComponent({
         waitImage(Ground.fgImg)
       ])
       console.log('[App] Images loaded')
-      game.mount(canvas.value)
-      // game.addBird(new CheatingControl)
-      // game.addBird(new CheatingControl)
-      // game.addBird(new CheatingControl)
-      // game.addBird(new RandomControl)
-      // game.addBird(new RandomControl)
-      // game.addBird(new RandomControl)
-      // game.addBird(new NNControl)
-      // game.addBird(new NNControl)
-      // game.addBird(new NNControl)
-      // game.addBird(new NNControl)
-      // game.addBird(new NNControl)
-      // game.addBird(new NNControl)
-      // game.addBird(new NNControl)
-      // game.addBird(new NNControl)
+      game.mount(canvas.value, 75)
       game.run()
     })
     return {
@@ -109,7 +121,8 @@ export default defineComponent({
       game,
       tps,
       generations,
-      maxScore
+      maxScore,
+      toggleSpeed
     }
   }
 })

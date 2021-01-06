@@ -15,12 +15,14 @@ export class Game {
   protected ground!: Ground
   protected birds: Bird[] = []
 
-  public mount(canvas: HTMLCanvasElement) {
+  public mount(canvas: HTMLCanvasElement, fps: number = 60) {
     this.canvas = canvas
-    const engine = this.engine = new Engine2D(canvas)
+    const engine = this.engine = new Engine2D(canvas, fps)
     const ground = this.ground = new Ground(0, canvas.height - Ground.fgImg.height)
+    const ceiling = new Ground(0, -Ground.fgImg.height)
     engine
       .addTickable(new Background(0, 0))
+      .addTickable(ceiling)
       .addTickable(ground)
     this.pipeMgr = new PipeManager(canvas, engine, this.gap, this.pipeInterval)
   }

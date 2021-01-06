@@ -4,10 +4,10 @@ import Neuron from '../nn/Neuron'
 
 
 function randWeight() {
-  return (Math.random() > 0.5 ? 1 : -1) * Math.random() * 50
+  return Math.random() * 100 - 50
 }
 function randBias() {
-  return (Math.random() > 0.5 ? 1 : -1) * Math.random() * 50
+  return Math.random() * 100 - 50
 }
 
 export class NNControl extends Control {
@@ -26,10 +26,10 @@ export class NNControl extends Control {
     }
   }
 
-  public tick(bird: Bird, { /* toGround, */ nextPipe }: EnvInfo) {
+  public tick(bird: Bird, { toGround, nextPipe }: EnvInfo) {
     if (this.ticks % 1 == 0) {
-      let dx = 0
-      let dy = 0
+      let dx = 50
+      let dy = toGround + 100
       if (nextPipe) {
         dx = nextPipe.dx
         dy = nextPipe.dy

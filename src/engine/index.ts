@@ -16,10 +16,14 @@ export class Engine2D {
   }
   protected _tps = 0
   public tps = 0
-  protected requestId?: number
-  constructor(canvas: HTMLCanvasElement) {
+  /**
+   * Desired FPS
+   */
+  public maxTps: number
+  constructor(canvas: HTMLCanvasElement, maxTps: number = 60) {
     this.canvas = canvas
     this.context = canvas.getContext('2d')!!
+    this.maxTps = maxTps
   }
 
   static newResource = newResource
@@ -138,22 +142,16 @@ export class Engine2D {
   }
   protected tpsInt?: ReturnType<typeof setInterval>
 
-  protected starts = 0
-  protected nextStart() {
-    this.starts = (this.starts + 1) % 0xffffffff
-  }
-
   public pause() {
     this._paused = true
     if (this.tpsInt !== undefined) {
       clearInterval(this.tpsInt)
       this.tpsInt = undefined
     }
-    if (this.requestId !== undefined) {
-      cancelAnimationFrame(this.requestId)  // This is not working
-      this.requestId = undefined
+    if (this.tickTimeout !== undefined) {
+      clearInterval(this.tickTimeout)
+      this.tickTimeout = undefined
     }
-    this.nextStart()
     return this
   }
 
@@ -167,17 +165,27 @@ export class Engine2D {
       this.tps = this._tps
       this._tps = 0
     }, 1000)
-    this._run(this.starts)
+    this._run()
   }
 
-  protected _run(starts: number) {
+  public shouldDraw = true
+  public setMaxTps(tps: number) {
+    this.maxTps = tps
+  }
+  public setDraw(shouldDraw: boolean) {
+    if (!this.paused) this.pause()
+    this.shouldDraw = shouldDraw
+    this.unpause()
+  }
+
+  protected tickTimeout?: ReturnType<typeof setTimeout>
+  protected _run() {
     if (this._paused) return this
-    this.requestId = requestAnimationFrame(() => {
-      if (starts != this.starts) return  // This frame should be canceled
+    this.tickTimeout = setTimeout(() => {
       this.tick()
-      this.draw()
-      this._run(starts)  // Loop
-    })
+      if (this.shouldDraw) requestAnimationFrame(() => this.draw())
+      this._run()
+    }, 1000 / this.maxTps)
     return this
   }
 }

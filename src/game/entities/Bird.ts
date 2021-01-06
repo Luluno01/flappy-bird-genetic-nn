@@ -47,7 +47,7 @@ export class Bird extends Entity implements MovingEntity {
   }
 
   public flap() {
-    this.velocity = new Vector2D(0, -3.5)
+    this.velocity = new Vector2D(0, -3.0)
     Bird.flySnd.play()
     // console.log('[game.entities.Bird.Bird] Bird', this.id, 'flaps')
   }
@@ -63,7 +63,7 @@ export class Bird extends Entity implements MovingEntity {
     } else {
       this.aliveTicks++
       const pos = this.fragments[0][0]
-      if (pos.y < 0) pos.y = 0
+      // if (pos.y < 0) pos.y = 0
       const { x, y } = pos
       const { game } = this
       const { pipeMgr } = game
